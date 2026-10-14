@@ -5,9 +5,9 @@ to a Windows VM with IIS and SQL Server.
 
 | Setting | Value |
 | --- | --- |
-| Domain | `hm.solapurcorporation.org` |
+| Domain | `hsm.solapurcorporation.org` |
 | Public IPv4 | `115.242.140.250` |
-| Public website | `https://hm.solapurcorporation.org` |
+| Public website | `https://hsm.solapurcorporation.org` |
 | Private API listener | `http://127.0.0.1:5001` |
 
 If your assigned domain or VM IP is different, substitute your actual values
@@ -21,7 +21,7 @@ guidance is in [Deployment_Guide.md](./Deployment_Guide.md).
 2. Wait for DNS propagation, then check:
 
    ```powershell
-   Resolve-DnsName hm.solapurcorporation.org
+   Resolve-DnsName hsm.solapurcorporation.org
    ```
 
    It should resolve to your VM's public IP.
@@ -37,7 +37,7 @@ On the Windows VM, install:
 - The .NET 8 Hosting Bundle for the API, then restart IIS.
 - SQL Server locally or a reachable SQL Server with encrypted, firewall-
   restricted connectivity.
-- A trusted TLS certificate for `hm.solapurcorporation.org` in the Local
+- A trusted TLS certificate for `hsm.solapurcorporation.org` in the Local
   Computer certificate store.
 
 Node.js/npm and the .NET 8 SDK are needed on the build machine. They are not
@@ -59,7 +59,7 @@ required on the VM to serve the built React static files.
    Jwt__Issuer=<configured issuer>
    Jwt__Audience=<configured audience>
    Jwt__ExpiryHours=<approved lifetime>
-   AllowedOrigins=https://hm.solapurcorporation.org
+   AllowedOrigins=https://hsm.solapurcorporation.org
    PaymentGateway__Provider=<approved provider>
    ```
 
@@ -101,9 +101,9 @@ directories for rollback. Do not deploy the repository root, `node_modules`,
 
    | Type | IP | Port | Host name | Certificate |
    | --- | --- | ---: | --- | --- |
-   | HTTP | `115.242.140.250` or All Unassigned | 80 | `hm.solapurcorporation.org` | None |
+   | HTTP | `115.242.140.250` or All Unassigned | 80 | `hsm.solapurcorporation.org` | None |
    | HTTP | `115.242.140.250` or All Unassigned | 80 | *(blank, for IP access)* | None |
-   | HTTPS | `115.242.140.250` or All Unassigned | 443 | `hm.solapurcorporation.org` | Certificate for `hm.solapurcorporation.org` |
+   | HTTPS | `115.242.140.250` or All Unassigned | 443 | `hsm.solapurcorporation.org` | Certificate for `hsm.solapurcorporation.org` |
 
    Enable SNI if the VM hosts multiple HTTPS sites on the same IP. Enable ARR
    proxy at the IIS server level so the frontend's API rewrite can reach the
@@ -124,9 +124,9 @@ Invoke-WebRequest http://127.0.0.1:5001/api/venues -UseBasicParsing
 
 Then check from a browser:
 
-1. `https://hm.solapurcorporation.org/book` loads the booking flow and has a
+1. `https://hsm.solapurcorporation.org/book` loads the booking flow and has a
    trusted certificate.
-2. `https://hm.solapurcorporation.org/api/venues` returns venue data through
+2. `https://hsm.solapurcorporation.org/api/venues` returns venue data through
    the frontend IIS proxy.
 3. Refresh direct React routes such as `/cancel-booking`, `/refunds`,
    `/track-refund`, and `/admin/login`.

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide deploys the React frontend and ASP.NET Core 8 API on Windows Server/IIS, backed by SQL Server. The public site uses `hm.solapurcorporation.org` and `115.242.140.250`; IIS serves the frontend on the public bindings and reverse-proxies `/api/*` to an API site bound only to loopback.
+This guide deploys the React frontend and ASP.NET Core 8 API on Windows Server/IIS, backed by SQL Server. The public site uses `hsm.solapurcorporation.org` and `115.242.140.250`; IIS serves the frontend on the public bindings and reverse-proxies `/api/*` to an API site bound only to loopback.
 
 ## 1. Prepare the Server
 
@@ -8,7 +8,7 @@ This guide deploys the React frontend and ASP.NET Core 8 API on Windows Server/I
 2. Verify DNS after it propagates:
 
    ```powershell
-   Resolve-DnsName hm.solapurcorporation.org
+   Resolve-DnsName hsm.solapurcorporation.org
    ```
 
    Confirm the returned IPv4 address is `115.242.140.250`. Ensure the server owns that public IP, or that the router/NAT forwards ports 80 and 443 to it.
@@ -16,7 +16,7 @@ This guide deploys the React frontend and ASP.NET Core 8 API on Windows Server/I
 4. Install the .NET 8 Hosting Bundle on the IIS server, then restart IIS.
 5. Install SQL Server 2022 (or a supported managed SQL Server) and configure encrypted connectivity from the API server.
 6. Install Node.js 18 LTS on the build machine. Node.js is needed only to build the frontend.
-7. Obtain a trusted TLS certificate for `hm.solapurcorporation.org` and install it in the server's Local Computer certificate store.
+7. Obtain a trusted TLS certificate for `hsm.solapurcorporation.org` and install it in the server's Local Computer certificate store.
 
 ### Public IIS bindings
 
@@ -24,11 +24,11 @@ Create one frontend IIS site, with its physical path set to the deployed React `
 
 | Type | IP address | Port | Host name | Certificate |
 | --- | --- | ---: | --- | --- |
-| HTTP | All Unassigned (or `115.242.140.250`) | 80 | `hm.solapurcorporation.org` | None |
+| HTTP | All Unassigned (or `115.242.140.250`) | 80 | `hsm.solapurcorporation.org` | None |
 | HTTP | `115.242.140.250` | 80 | *(leave blank)* | None |
-| HTTPS | All Unassigned (or `115.242.140.250`) | 443 | `hm.solapurcorporation.org` | Domain certificate; enable SNI if sharing the IP |
+| HTTPS | All Unassigned (or `115.242.140.250`) | 443 | `hsm.solapurcorporation.org` | Domain certificate; enable SNI if sharing the IP |
 
-The blank-host HTTP binding lets `http://115.242.140.250` reach the site; the included frontend `web.config` redirects HTTP requests, including IP requests, to `https://hm.solapurcorporation.org`. Use the domain URL for normal public access. A regular domain certificate does **not** validate `https://115.242.140.250`; only add an HTTPS IP binding if the certificate includes that IP address in its subject alternative names. In IIS Manager, set the site's **Physical path** to the directory containing the built `index.html` and `web.config` files (for example, `D:\Sites\Hutatma\frontend` after copying the contents of `frontend\build` there).
+The blank-host HTTP binding lets `http://115.242.140.250` reach the site; the included frontend `web.config` redirects HTTP requests, including IP requests, to `https://hsm.solapurcorporation.org`. Use the domain URL for normal public access. A regular domain certificate does **not** validate `https://115.242.140.250`; only add an HTTPS IP binding if the certificate includes that IP address in its subject alternative names. In IIS Manager, set the site's **Physical path** to the directory containing the built `index.html` and `web.config` files (for example, `D:\Sites\Hutatma\frontend` after copying the contents of `frontend\build` there).
 
 Open inbound TCP 80 and 443 in Windows Firewall and any upstream firewall/NAT. Do not expose the API's loopback port (5001) publicly.
 
@@ -80,7 +80,7 @@ Complete these checks before exposing the API to the internet:
 
 1. **Restrict CORS.** `backend\Program.cs` reads the comma-separated
    `AllowedOrigins` setting and requires an explicit non-wildcard list in
-   Production. Set it to `https://hm.solapurcorporation.org`. The frontend
+   Production. Set it to `https://hsm.solapurcorporation.org`. The frontend
    uses the same-origin `/api` proxy, so do not add broad origins.
 2. **Protect Swagger.** The API exposes Swagger only outside Production.
    Ensure `ASPNETCORE_ENVIRONMENT=Production` is set for the IIS API process.
@@ -130,8 +130,8 @@ Pop-Location
 
 ## 8. Smoke-Test the Deployment
 
-1. Open `https://hm.solapurcorporation.org` and verify that direct navigation to routes such as `/cancel-booking` and `/track-refund` works after refresh.
-2. Request `https://hm.solapurcorporation.org/api/venues` and confirm the API returns venue data.
+1. Open `https://hsm.solapurcorporation.org` and verify that direct navigation to routes such as `/cancel-booking` and `/track-refund` works after refresh.
+2. Request `https://hsm.solapurcorporation.org/api/venues` and confirm the API returns venue data.
 3. Verify `http://115.242.140.250` reaches the frontend. Check the browser console and network panel for failed `/api/` requests.
 4. Test application/mobile lookup, booking availability, booking summary, and admin sign-in with non-production test data.
 5. In a payment test environment, verify payment initiation, callback handling, receipt generation, and notification delivery. Do not test live charges with production credentials.
