@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+	<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+	<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+	<ProjectGuid>{B3D9F6C1-4E4F-4A69-9D2A-9B1A1C6E9F01}</ProjectGuid>
+	<OutputType>Library</OutputType>
+	<RootNamespace>HutatmaBooking.WebForms</RootNamespace>
+	<AssemblyName>HutatmaBooking.WebForms</AssemblyName>
+	<TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+	<OutputPath>bin\</OutputPath>
+	<ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+	<UseIISExpress>true</UseIISExpress>
+	<IISUrl>http://localhost:5000/</IISUrl>
+  </PropertyGroup>
+  <ItemGroup>
+	<Content Include="Default.aspx" />
+	<Compile Include="Default.aspx.cs" />
+	<Compile Include="Default.aspx.designer.cs" />
+	<Content Include="Global.asax" />
+	<Compile Include="Global.asax.cs" />
+	<Content Include="Web.config" />
+  </ItemGroup>
+	<ItemGroup>
+	  <Content Include="CreateBooking.aspx" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Content Include="Pages\CreateBooking.aspx" />
+	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
