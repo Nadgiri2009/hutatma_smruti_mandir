@@ -12,7 +12,7 @@ export interface BookingWizardState {
   chargeUnit:      string;
   fromDate:    string;
   toDate:      string;
-  session:     'Morning' | 'Evening' | 'FullDay';
+  session:     string;
   // Step 2 (summary)
   totalDays:       number;
   baseRent:        number;
@@ -53,7 +53,7 @@ export interface BookingWizardState {
 const initialState: BookingWizardState = {
   step: 0,
   venueId: null, venueName: '', venuePricingId: null, priceItemName: '', chargeUnit: '',
-  fromDate: '', toDate: '', session: 'FullDay',
+  fromDate: '', toDate: '', session: '',
   totalDays: 0, baseRent: 0, holidayCharge: 0,
   equipmentCharge: 0, grandTotal: 0, securityDeposit: 0, cgstAmount: 0, sgstAmount: 0,
   equipment: [],

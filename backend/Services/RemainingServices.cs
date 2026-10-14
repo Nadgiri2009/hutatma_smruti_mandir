@@ -223,7 +223,7 @@ public class PaymentService : IPaymentService
         await _db.SaveChangesAsync();
 
         var receiptPdf = _receipts.GenerateReceiptPdf(booking, payment, receipt.ReceiptNumber);
-        await _notifications.SendBookingPaymentNotificationAsync(booking, payment, receipt.ReceiptNumber, receiptPdf);
+        var receiptEmailSent = await _notifications.SendBookingPaymentNotificationAsync(booking, payment, receipt.ReceiptNumber, receiptPdf);
         await _audit.LogAsync("GatewayPaymentCompleted", "Payments", payment.Id, "Pending", "Paid");
 
         return new PaymentDto
@@ -237,6 +237,7 @@ public class PaymentService : IPaymentService
             PaymentDate = payment.PaymentDate,
             Status = payment.Status,
             ReceiptNumber = receipt.ReceiptNumber,
+            ReceiptEmailSent = receiptEmailSent,
         };
     }
 
@@ -279,7 +280,7 @@ public class PaymentService : IPaymentService
         await _db.SaveChangesAsync();
 
         var receiptPdf = _receipts.GenerateReceiptPdf(booking, payment, receipt.ReceiptNumber);
-        await _notifications.SendBookingPaymentNotificationAsync(booking, payment, receipt.ReceiptNumber, receiptPdf);
+        var receiptEmailSent = await _notifications.SendBookingPaymentNotificationAsync(booking, payment, receipt.ReceiptNumber, receiptPdf);
         await _audit.LogAsync("VerifyPayment", "Payments", payment.Id, "Pending", "Paid");
 
         return new PaymentDto
@@ -290,6 +291,7 @@ public class PaymentService : IPaymentService
             TransactionRef = payment.TransactionRef, PaymentDate = payment.PaymentDate,
             Status = payment.Status,
             ReceiptNumber = receipt.ReceiptNumber,
+            ReceiptEmailSent = receiptEmailSent,
         };
     }
 

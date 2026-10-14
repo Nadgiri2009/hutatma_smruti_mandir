@@ -114,6 +114,11 @@ export const paymentAPI = {
   complete:     (data: any)         => api.post('/payments/complete', data),
 };
 
+export const receiptAPI = {
+  downloadPdf: (bookingNumber: string) =>
+    api.get(`/receipts/number/${encodeURIComponent(bookingNumber)}/pdf`, { responseType: 'blob' }),
+};
+
 // ── Gallery ───────────────────────────────────────────────────────────────────
 export const galleryAPI = {
   getAll:  (type?: string) => api.get('/gallery', { params: { type } }),

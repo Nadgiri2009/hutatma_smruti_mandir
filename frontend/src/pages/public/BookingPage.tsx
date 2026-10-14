@@ -19,7 +19,7 @@ import {
   nextStep, prevStep, setAvailability, setSummary,
   setApplicant, setBankDetail, setBookingResult, resetBooking,
 } from '../../store/slices/bookingSlice';
-import { bookingAPI, paymentAPI, venueAPI } from '../../services/api';
+import { bookingAPI, paymentAPI, receiptAPI, venueAPI } from '../../services/api';
 import { VenueEquipment } from '../../types/types';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -95,7 +95,7 @@ const Step1Availability: React.FC<{ onNext: () => void }> = ({ onNext }) => {
       priceItemName:  wizard.priceItemName || '',
       fromDate:       wizard.fromDate || '',
       toDate:         wizard.toDate   || '',
-      session:        wizard.session || 'FullDay',
+      session:        wizard.session || '',
     },
   });
 
@@ -228,6 +228,11 @@ const Step1Availability: React.FC<{ onNext: () => void }> = ({ onNext }) => {
   const activeSlot = slots.find((slot: any) => String(slot.date).slice(0, 10) === activeDate);
   const isSessionUnavailable = (sess: string) => !activeSlot || statusForSession(activeSlot, sess) !== 'Available';
   const hasSelectedSessionConflict = !!activeSlot && statusForSession(activeSlot, session) === 'Booked';
+  useEffect(() => {
+    if (activeSlot && session && statusForSession(activeSlot, session) !== 'Available') {
+      setValue('session', '', { shouldDirty: true, shouldValidate: true });
+    }
+  }, [activeSlot, session, setValue]);
   const todayKey = formatDateKey(new Date());
   const monthYear = calendarMonth.getFullYear();
   const monthIndex = calendarMonth.getMonth();
@@ -1209,6 +1214,26 @@ const BookingSuccess: React.FC<{ receipt: { booking: any; payment: any } }> = ({
   const dispatch = useDispatch();
   const wizard   = useSelector((s: RootState) => s.booking);
   const navigate = useNavigate();
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
+
+  const downloadReceipt = async () => {
+    setDownloadingReceipt(true);
+    try {
+      const response = await receiptAPI.downloadPdf(receipt.booking.bookingNumber);
+      const downloadUrl = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Receipt-${receipt.booking.receiptNumber || receipt.booking.bookingNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch {
+      toast.error('Receipt PDF could not be downloaded. Please try again.');
+    } finally {
+      setDownloadingReceipt(false);
+    }
+  };
 
   return (
     <Box textAlign="center" py={4}>
@@ -1222,17 +1247,19 @@ const BookingSuccess: React.FC<{ receipt: { booking: any; payment: any } }> = ({
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', mb: 4 }}>
         Your payment has been verified and your booking is confirmed. Your receipt is ready below.
       </Typography>
+      <Alert severity={receipt.payment.receiptEmailSent ? 'success' : 'warning'} sx={{ maxWidth: 600, mx: 'auto', mb: 3, textAlign: 'left' }}>
+        {receipt.payment.receiptEmailSent
+          ? `The receipt PDF has been emailed to ${receipt.booking.applicantEmail}.`
+          : `The booking is confirmed, but email delivery to ${receipt.booking.applicantEmail} could not be confirmed. Please download your receipt below.`}
+      </Alert>
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', mb: 3, displayPrint: 'none' }}>
-        <Button variant="contained" startIcon={<Download />} onClick={() => window.print()}>
-          Download Receipt
+        <Button variant="contained" startIcon={<Download />} onClick={downloadReceipt} disabled={downloadingReceipt}>
+          {downloadingReceipt ? 'Preparing PDF...' : 'Download Receipt PDF'}
         </Button>
         <Button variant="outlined" onClick={() => { dispatch(resetBooking()); navigate('/'); }}>
           Back to Home
         </Button>
       </Box>
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 3, displayPrint: 'none' }}>
-        In the print dialog, choose “Save as PDF” to download a copy.
-      </Typography>
       <Receipt booking={receipt.booking} payment={receipt.payment} />
     </Box>
   );

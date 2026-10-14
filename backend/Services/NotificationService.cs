@@ -67,16 +67,16 @@ public class NotificationService : INotificationService
         }
     }
 
-    public async Task SendBookingPaymentNotificationAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf)
+    public async Task<bool> SendBookingPaymentNotificationAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf)
     {
         var emailEnabled = !string.IsNullOrWhiteSpace(_config["PaymentNotifications:Smtp:Host"])
             && !string.IsNullOrWhiteSpace(_config["PaymentNotifications:Smtp:FromEmail"]);
         var smsEnabled = IsAclGatewayConfigured();
+        var receiptEmailSent = false;
 
         if (!emailEnabled && !smsEnabled)
         {
             _logger.LogInformation("Payment notifications skipped because no email or SMS credentials are configured.");
-            return;
         }
 
         var smsMessage = $"Your booking {booking.BookingNumber} has been paid successfully. Receipt: {receiptNumber}.";
@@ -86,11 +86,20 @@ public class NotificationService : INotificationService
             try
             {
                 await SendReceiptEmailAsync(booking, payment, receiptNumber, receiptPdf);
+                receiptEmailSent = true;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Email notification failed for booking {BookingNumber}", booking.BookingNumber);
             }
+        }
+        else if (string.IsNullOrWhiteSpace(booking.Applicant?.Email))
+        {
+            _logger.LogWarning("Receipt email not sent for booking {BookingNumber}: no applicant email is registered.", booking.BookingNumber);
+        }
+        else
+        {
+            _logger.LogWarning("Receipt email not sent for booking {BookingNumber}: SMTP is not configured.", booking.BookingNumber);
         }
 
         if (smsEnabled && !string.IsNullOrWhiteSpace(booking.Applicant?.Mobile))
@@ -104,6 +113,8 @@ public class NotificationService : INotificationService
                 _logger.LogWarning(ex, "SMS notification failed for booking {BookingNumber}", booking.BookingNumber);
             }
         }
+
+        return receiptEmailSent;
     }
 
     public async Task SendReceiptEmailAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf)

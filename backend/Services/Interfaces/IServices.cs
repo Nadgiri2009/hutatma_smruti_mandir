@@ -61,7 +61,7 @@ public interface IReceiptService
 
 public interface INotificationService
 {
-    Task SendBookingPaymentNotificationAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf);
+    Task<bool> SendBookingPaymentNotificationAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf);
     Task SendReceiptEmailAsync(Booking booking, Payment payment, string receiptNumber, byte[] receiptPdf);
     Task SendOneTimeCodeAsync(string mobile, string otp, string purpose);
 }
@@ -110,6 +110,7 @@ public class PaymentDto
     public string   Status        { get; set; } = "";
     public string?  Remarks       { get; set; }
     public string   ReceiptNumber { get; set; } = "";
+    public bool     ReceiptEmailSent { get; set; }
 }
 
 public class GalleryItemDto
