@@ -5,9 +5,9 @@ to a Windows VM with IIS and SQL Server.
 
 | Setting | Value |
 | --- | --- |
-| Domain | `hsm.solapurcorporation.org` |
+| Domain | `hm.solapurcorporation.org` |
 | Public IPv4 | `115.242.140.250` |
-| Public website | `https://hsm.solapurcorporation.org` |
+| Public website | `https://hm.solapurcorporation.org` |
 | Private API listener | `http://127.0.0.1:5001` |
 
 If your assigned domain or VM IP is different, substitute your actual values
@@ -21,7 +21,7 @@ guidance is in [Deployment_Guide.md](./Deployment_Guide.md).
 2. Wait for DNS propagation, then check:
 
    ```powershell
-   Resolve-DnsName hsm.solapurcorporation.org
+   Resolve-DnsName hm.solapurcorporation.org
    ```
 
    It should resolve to your VM's public IP.
@@ -37,7 +37,7 @@ On the Windows VM, install:
 - The .NET 8 Hosting Bundle for the API, then restart IIS.
 - SQL Server locally or a reachable SQL Server with encrypted, firewall-
   restricted connectivity.
-- A trusted TLS certificate for `hsm.solapurcorporation.org` in the Local
+- A trusted TLS certificate for `hm.solapurcorporation.org` in the Local
   Computer certificate store.
 
 Node.js/npm and the .NET 8 SDK are needed on the build machine. They are not
@@ -59,7 +59,7 @@ required on the VM to serve the built React static files.
    Jwt__Issuer=<configured issuer>
    Jwt__Audience=<configured audience>
    Jwt__ExpiryHours=<approved lifetime>
-   AllowedOrigins=https://hsm.solapurcorporation.org
+   AllowedOrigins=https://hm.solapurcorporation.org
    PaymentGateway__Provider=<approved provider>
    ```
 
@@ -82,10 +82,12 @@ Pop-Location
 ```
 
 Copy `artifacts\api` to a versioned API directory on the VM. Copy the
-contents of `frontend\build` to a separate versioned web directory. The
-frontend build includes `web.config`, which provides React route fallback,
-HTTPS redirection, and the `/api/*` proxy. Keep prior release directories
-for rollback. Do not deploy `node_modules`, `.env` files, or local secrets.
+contents of `frontend\build` to a separate versioned web directory. This
+directory must contain `index.html` and `web.config`; IIS uses `index.html`
+as the default page. The frontend `web.config` also provides React route
+fallback, HTTPS redirection, and the `/api/*` proxy. Keep prior release
+directories for rollback. Do not deploy the repository root, `node_modules`,
+`.env` files, or local secrets as the public site.
 
 ## 5. Configure IIS
 
@@ -93,17 +95,20 @@ for rollback. Do not deploy `node_modules`, `.env` files, or local secrets.
    IIS site pointing at its published directory and bind it only to
    `127.0.0.1:5001` over HTTP. Assign the API pool and set the production
    process settings from step 3.
-2. Create a frontend IIS site pointing at the deployed React `build`
-   directory. Add:
+2. Create a frontend IIS site pointing at the deployed React build directory
+   (the directory containing `index.html` and `web.config`, not the repository
+   root). Bind it to the assigned IP and domain:
 
    | Type | IP | Port | Host name | Certificate |
    | --- | --- | ---: | --- | --- |
-   | HTTP | All Unassigned or VM IP | 80 | `hsm.solapurcorporation.org` | None |
-   | HTTPS | All Unassigned or VM IP | 443 | `hsm.solapurcorporation.org` | Domain certificate |
+   | HTTP | `115.242.140.250` or All Unassigned | 80 | `hm.solapurcorporation.org` | None |
+   | HTTP | `115.242.140.250` or All Unassigned | 80 | *(blank, for IP access)* | None |
+   | HTTPS | `115.242.140.250` or All Unassigned | 443 | `hm.solapurcorporation.org` | Certificate for `hm.solapurcorporation.org` |
 
    Enable SNI if the VM hosts multiple HTTPS sites on the same IP. Enable ARR
    proxy at the IIS server level so the frontend's API rewrite can reach the
-   API loopback listener.
+   API loopback listener. HTTP requests made by IP are redirected to the
+   HTTPS domain; the domain certificate will not secure the IP URL itself.
 3. Keep the API bound to loopback only. Do not create a public port 5001
    binding or firewall rule.
 4. Preserve and back up API uploads under `wwwroot\uploads\idproofs` and
@@ -119,9 +124,9 @@ Invoke-WebRequest http://127.0.0.1:5001/api/venues -UseBasicParsing
 
 Then check from a browser:
 
-1. `https://hsm.solapurcorporation.org/book` loads the booking flow and has a
+1. `https://hm.solapurcorporation.org/book` loads the booking flow and has a
    trusted certificate.
-2. `https://hsm.solapurcorporation.org/api/venues` returns venue data through
+2. `https://hm.solapurcorporation.org/api/venues` returns venue data through
    the frontend IIS proxy.
 3. Refresh direct React routes such as `/cancel-booking`, `/refunds`,
    `/track-refund`, and `/admin/login`.
