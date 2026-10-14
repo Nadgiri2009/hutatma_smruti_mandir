@@ -24,12 +24,15 @@ const AdminSlotAvailabilityPage: React.FC = () => {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [capacityDialogOpen, setCapacityDialogOpen] = useState(false);
-  const [capacityDialogStep, setCapacityDialogStep] = useState<'select-session' | 'edit-capacity'>('select-session');
+  const [capacityDialogStep, setCapacityDialogStep] = useState<'select-venue-session' | 'edit-capacity'>('select-venue-session');
+  const [capacityVenueId, setCapacityVenueId] = useState<number | ''>('');
   const [capacitySession, setCapacitySession] = useState<CapacitySession | ''>('');
+  const [capacitySessionStats, setCapacitySessionStats] = useState<any>(null);
   const [capacityValue, setCapacityValue] = useState(30);
+  const [capacityLoading, setCapacityLoading] = useState(false);
   const [capacitySaving, setCapacitySaving] = useState(false);
   const role = useSelector((state: RootState) => state.auth.role);
-  const selectedVenue = venues.find((venue) => venue.venueId === selectedVenueId);
+  const capacityVenue = venues.find((venue) => venue.venueId === capacityVenueId);
 
   useEffect(() => {
     venueAPI.getAllForAdmin()
@@ -87,34 +90,50 @@ const AdminSlotAvailabilityPage: React.FC = () => {
     ? 'error' : status === 'Partially Booked' ? 'warning' : status === 'Unavailable' ? 'default' : 'success';
 
   const openCapacityEditor = () => {
+    setCapacityVenueId('');
     setCapacitySession('');
-    setCapacityDialogStep('select-session');
+    setCapacitySessionStats(null);
+    setCapacityDialogStep('select-venue-session');
     setCapacityDialogOpen(true);
   };
 
-  const continueCapacityEdit = () => {
-    if (!capacitySession) {
-      toast.error('Select a session first.');
+  const continueCapacityEdit = async () => {
+    if (!capacityVenue || !capacitySession) {
+      toast.error('Select a venue and session first.');
       return;
     }
-    const capacity = capacitySession === 'Morning'
-      ? selectedVenue?.morningBookingCapacity
-      : capacitySession === 'Afternoon'
-        ? selectedVenue?.afternoonBookingCapacity
-        : capacitySession === 'Evening'
-          ? selectedVenue?.eveningBookingCapacity
-          : 1;
-    setCapacityValue(capacity || 1);
-    setCapacityDialogStep('edit-capacity');
+    setCapacityLoading(true);
+    try {
+      const response = await bookingAPI.checkAvailability({
+        venueId: capacityVenue.venueId,
+        fromDate: availabilityDate,
+        toDate: availabilityDate,
+      });
+      const selectedAvailability = response.data.slots?.[0];
+      const stats = selectedAvailability?.sessions?.find((slot: any) => slot.session === capacitySession);
+      setCapacitySessionStats(stats || null);
+      const capacity = capacitySession === 'Morning'
+        ? capacityVenue.morningBookingCapacity
+        : capacitySession === 'Afternoon'
+          ? capacityVenue.afternoonBookingCapacity
+          : capacitySession === 'Evening'
+            ? capacityVenue.eveningBookingCapacity
+            : 1;
+      setCapacityValue(capacity || 1);
+      setCapacityDialogStep('edit-capacity');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to load capacity for the selected venue and date.');
+    } finally {
+      setCapacityLoading(false);
+    }
   };
 
-  const capacitySessionStats = sessionAvailability.find((slot: any) => slot.session === capacitySession);
   const isFullDayCapacity = capacitySession === 'FullDay';
   const capacityBelowBookings = !isFullDayCapacity
     && capacityValue < (capacitySessionStats?.bookedSlots || 0);
 
   const saveCapacity = async () => {
-    if (!selectedVenue || (capacitySession !== 'Morning' && capacitySession !== 'Afternoon' && capacitySession !== 'Evening')
+    if (!capacityVenue || (capacitySession !== 'Morning' && capacitySession !== 'Afternoon' && capacitySession !== 'Evening')
         || !Number.isInteger(capacityValue) || capacityValue < 1) {
       toast.error('Capacity must be a whole number greater than zero.');
       return;
@@ -125,9 +144,9 @@ const AdminSlotAvailabilityPage: React.FC = () => {
     }
     setCapacitySaving(true);
     try {
-      const response = await venueAPI.updateBookingCapacity(selectedVenue.venueId, capacitySession, capacityValue);
+      const response = await venueAPI.updateBookingCapacity(capacityVenue.venueId, capacitySession, capacityValue);
       const savedCapacity = response.data.capacity;
-      setVenues((current) => current.map((venue) => venue.venueId === selectedVenue.venueId
+      setVenues((current) => current.map((venue) => venue.venueId === capacityVenue.venueId
         ? { ...venue, [`${capacitySession.toLowerCase()}BookingCapacity`]: savedCapacity }
         : venue));
       setCapacityDialogOpen(false);
@@ -150,7 +169,7 @@ const AdminSlotAvailabilityPage: React.FC = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          {role === 'Admin' && selectedVenue && (
+          {role === 'Admin' && (
             <Button startIcon={<Edit />} onClick={openCapacityEditor} variant="outlined" size="small">
               Edit Capacity
             </Button>
@@ -267,30 +286,56 @@ const AdminSlotAvailabilityPage: React.FC = () => {
         </Box>
       </Paper>
 
-      <Dialog open={capacityDialogOpen} onClose={() => !capacitySaving && setCapacityDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{capacityDialogStep === 'select-session' ? 'Edit Capacity' : `Edit ${capacitySession === 'FullDay' ? 'Full Day' : capacitySession} Capacity`}</DialogTitle>
-        {capacityDialogStep === 'select-session' ? (
+      <Dialog open={capacityDialogOpen} onClose={() => !capacityLoading && !capacitySaving && setCapacityDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{capacityDialogStep === 'select-venue-session' ? 'Edit Capacity' : `Edit ${capacitySession === 'FullDay' ? 'Full Day' : capacitySession} Capacity`}</DialogTitle>
+        {capacityDialogStep === 'select-venue-session' ? (
           <>
             <DialogContent>
+              <FormControl fullWidth size="small" sx={{ mt: 1, mb: 2 }} disabled={!venues.length}>
+                <InputLabel>Select Venue</InputLabel>
+                <Select
+                  value={capacityVenueId}
+                  label="Select Venue"
+                  onChange={(event) => {
+                    setCapacityVenueId(Number(event.target.value));
+                    setCapacitySession('');
+                    setCapacitySessionStats(null);
+                  }}
+                >
+                  {venues.map((venue) => (
+                    <MenuItem key={venue.venueId} value={venue.venueId}>
+                      {venue.venueName}{venue.status !== 'Active' ? ` (${venue.status})` : ''}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <FormControl fullWidth size="small" sx={{ mt: 1 }}>
                 <InputLabel>Select Session</InputLabel>
-                <Select value={capacitySession} label="Select Session" onChange={(event) => setCapacitySession(event.target.value as CapacitySession)}>
+                <Select
+                  value={capacitySession}
+                  label="Select Session"
+                  disabled={!capacityVenue}
+                  onChange={(event) => setCapacitySession(event.target.value as CapacitySession)}
+                >
                   <MenuItem value="Morning">Morning</MenuItem>
+                  <MenuItem value="Afternoon">Afternoon</MenuItem>
                   <MenuItem value="Evening">Evening</MenuItem>
                   <MenuItem value="FullDay">Full Day</MenuItem>
                 </Select>
               </FormControl>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setCapacityDialogOpen(false)}>Cancel</Button>
-              <Button onClick={continueCapacityEdit} variant="contained" disabled={!capacitySession}>Continue</Button>
+              <Button onClick={() => setCapacityDialogOpen(false)} disabled={capacityLoading}>Cancel</Button>
+              <Button onClick={continueCapacityEdit} variant="contained" disabled={!capacityVenue || !capacitySession || capacityLoading}>
+                {capacityLoading ? 'Loading...' : 'Continue'}
+              </Button>
             </DialogActions>
           </>
         ) : (
           <>
             <DialogContent>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {selectedVenue?.venueName} · {capacitySession === 'FullDay' ? 'Full Day remains exclusive and blocks both sessions.' : `${capacitySession} session capacity.`}
+                {capacityVenue?.venueName} · {capacitySession === 'FullDay' ? 'Full Day remains exclusive and blocks both sessions.' : `${capacitySession} session capacity.`}
               </Typography>
               <Grid container spacing={1} sx={{ mb: 2 }}>
                 {[
@@ -324,7 +369,7 @@ const AdminSlotAvailabilityPage: React.FC = () => {
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setCapacityDialogStep('select-session')} disabled={capacitySaving}>Back</Button>
+              <Button onClick={() => setCapacityDialogStep('select-venue-session')} disabled={capacitySaving}>Back</Button>
               <Button onClick={() => setCapacityDialogOpen(false)} disabled={capacitySaving}>Cancel</Button>
               <Button onClick={saveCapacity} variant="contained" disabled={capacitySaving || isFullDayCapacity || capacityBelowBookings}>
                 {capacitySaving ? 'Saving...' : 'Save Capacity'}

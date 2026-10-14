@@ -17,7 +17,11 @@ builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 var configuredOrigins = (builder.Configuration["AllowedOrigins"] ?? "")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 var allowedOrigins = builder.Environment.IsDevelopment()
-    ? configuredOrigins.Concat(["http://localhost:8081", "http://127.0.0.1:8081"]).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+    ? configuredOrigins.Concat([
+        "http://localhost:3000", "http://127.0.0.1:3000",
+        "http://localhost:3001", "http://127.0.0.1:3001",
+        "http://localhost:8081", "http://127.0.0.1:8081"
+    ]).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
     : configuredOrigins;
 if (builder.Environment.IsProduction() &&
     (allowedOrigins.Length == 0 || allowedOrigins.Any(origin => origin == "*")))
