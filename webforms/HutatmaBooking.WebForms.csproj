@@ -14,24 +14,25 @@
 	<IISUrl>http://localhost:5000/</IISUrl>
   </PropertyGroup>
   <ItemGroup>
-	<Content Include="Default.aspx" />
-	<Compile Include="Default.aspx.cs" />
-	<Compile Include="Default.aspx.designer.cs" />
+	<Content Include="Pages\Default.aspx" />
+	<Compile Include="Pages\Default.aspx.cs" />
+	<Compile Include="Pages\Default.aspx.designer.cs" />
 	<Content Include="Global.asax" />
 	<Compile Include="Global.asax.cs" />
 	<Content Include="Web.config" />
   </ItemGroup>
 	<ItemGroup>
-	  <Content Include="CreateBooking.aspx" />
-	</ItemGroup>
-	<ItemGroup>
 	  <Content Include="Pages\CreateBooking.aspx" />
-	</ItemGroup>
+	  <Content Include="CreateBookingHandler.ashx" />
+	  <Compile Include="App_Code\CreateBookingHandler.cs" />
+	  <Compile Include="App_Code\DbHelper.cs" />
+	  </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

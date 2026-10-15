@@ -11,19 +11,22 @@
         protected void btnCreate_Click(object sender, EventArgs e)
         {
             lblMessage.Text = string.Empty;
-            if (!int.TryParse(txtVenueId.Text, out var venueId))
+            int venueId;
+            if (!int.TryParse(txtVenueId.Text, out venueId))
             {
                 lblMessage.Text = "Invalid VenueId.";
                 return;
             }
-            if (!DateTime.TryParse(txtFromDate.Text, out var fromDate) || !DateTime.TryParse(txtToDate.Text, out var toDate))
+            DateTime fromDate;
+            DateTime toDate;
+            if (!DateTime.TryParse(txtFromDate.Text, out fromDate) || !DateTime.TryParse(txtToDate.Text, out toDate))
             {
                 lblMessage.Text = "Invalid dates.";
                 return;
             }
 
             var fullName = txtFullName.Text ?? string.Empty;
-            var connStr = System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"]?.ConnectionString;
+            var connStr = System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"] != null ? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString : null;
             if (string.IsNullOrWhiteSpace(connStr))
             {
                 lblMessage.Text = "No DB connection configured.";
@@ -87,7 +90,7 @@
                 Full Name: <asp:TextBox ID="txtFullName" runat="server"></asp:TextBox>
             </div>
             <div>
-                <asp:Button ID="btnCreate" runat="server" Text="Create" />
+                <asp:Button ID="btnCreate" runat="server" Text="Create" OnClick="btnCreate_Click" />
             </div>
         </div>
     </form>
